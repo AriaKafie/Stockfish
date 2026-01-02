@@ -305,7 +305,7 @@ Move* generate_all(const Position& pos, Move* moveList) {
 
         constexpr int Shift = Us == WHITE ? 1 : 57;
         
-        if ((Type == QUIETS || Type == NON_EVASIONS))
+        if constexpr ((Type == QUIETS || Type == NON_EVASIONS))
         {
             uint32_t *u = (uint32_t*)moveList;
             *u = castle_lut[Us][pos.castling_rights()][(CastlePath & pos.pieces()) >> Shift];
