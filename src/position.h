@@ -109,6 +109,7 @@ class Position {
     bool   can_castle(CastlingRights cr) const;
     bool   castling_impeded(CastlingRights cr) const;
     Square castling_rook_square(CastlingRights cr) const;
+    int    castling_rights() const;
 
     // Checking
     Bitboard checkers() const;
@@ -277,6 +278,10 @@ inline bool Position::castling_impeded(CastlingRights cr) const {
 inline Square Position::castling_rook_square(CastlingRights cr) const {
     assert(cr == WHITE_OO || cr == WHITE_OOO || cr == BLACK_OO || cr == BLACK_OOO);
     return castlingRookSquare[cr];
+}
+
+inline int Position::castling_rights() const {
+    return st->castlingRights;
 }
 
 inline Bitboard Position::attackers_to(Square s) const { return attackers_to(s, pieces()); }

@@ -252,10 +252,66 @@ Move* generate_all(const Position& pos, Move* moveList) {
 
     moveList = splat_moves(moveList, ksq, b);
 
-    if ((Type == QUIETS || Type == NON_EVASIONS) && pos.can_castle(Us & ANY_CASTLING))
-        for (CastlingRights cr : {Us & KING_SIDE, Us & QUEEN_SIDE})
-            if (!pos.castling_impeded(cr) && pos.can_castle(cr))
-                *moveList++ = Move::make<CASTLING>(ksq, pos.castling_rook_square(cr));
+    static constexpr auto castle_lut = [] {
+        using Table =
+            std::array<
+                std::array<
+                    std::array<uint32_t, 1 << 6>,
+                    CASTLING_RIGHT_NB>,
+                COLOR_NB>;
+
+        Table table{};
+
+        for (Color c : {WHITE, BLACK})
+        {
+            Move castle_oo  = Move::make<CASTLING>(relative_square(c, SQ_E1), relative_square(c, SQ_H1));
+            Move castle_ooo = Move::make<CASTLING>(relative_square(c, SQ_E1), relative_square(c, SQ_A1));
+            
+            for (int cr = 0; cr < CASTLING_RIGHT_NB; ++cr)
+            {
+                bool rights_oo  = cr & (c & KING_SIDE);
+                bool rights_ooo = cr & (c & QUEEN_SIDE);
+                
+                for (int impeded = 0; impeded < (1 << 6); ++impeded)
+                {
+                    uint16_t res[2] = {}, *p = res;
+
+                    if (rights_oo  && (impeded & 0b110000) == 0)
+                        *p++ = castle_oo.raw();
+
+                    if (rights_ooo && (impeded & 0b000111) == 0)
+                        *p++ = castle_ooo.raw();
+
+                    table[c][cr][impeded] = uint32_t(res[0]) | (uint32_t(res[1]) << 16);
+                }
+            }
+        }
+
+        return table;
+    }();
+
+    if (pos.is_chess960())
+    {
+        if ((Type == QUIETS || Type == NON_EVASIONS) && pos.can_castle(Us & ANY_CASTLING))
+            for (CastlingRights cr : {Us & KING_SIDE, Us & QUEEN_SIDE})
+                if (!pos.castling_impeded(cr) && pos.can_castle(cr))
+                    *moveList++ = Move::make<CASTLING>(ksq, pos.castling_rook_square(cr));
+    }
+    else
+    {
+        constexpr Bitboard CastlePath = Us == WHITE
+            ? square_bb(SQ_B1) | square_bb(SQ_C1) | square_bb(SQ_D1) | square_bb(SQ_F1) | square_bb(SQ_G1)
+            : square_bb(SQ_B8) | square_bb(SQ_C8) | square_bb(SQ_D8) | square_bb(SQ_F8) | square_bb(SQ_G8);
+
+        constexpr int Shift = Us == WHITE ? 1 : 57;
+        
+        if ((Type == QUIETS || Type == NON_EVASIONS))
+        {
+            uint32_t *u = (uint32_t*)moveList;
+            *u = castle_lut[Us][pos.castling_rights()][(CastlePath & pos.pieces()) >> Shift];
+            moveList += popcount(*u & 0x40004000);
+        }
+    }
 
     return moveList;
 }
