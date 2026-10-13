@@ -625,23 +625,21 @@ void Position::update_slider_blockers(Color c) const {
     st->blockersForKing[c] = 0;
     st->pinners[~c]        = 0;
 
-    // Snipers are sliders that attack 's' when a piece and other snipers are removed
-    Bitboard snipers = ((attacks_bb(ROOK, ksq) & pieces(QUEEN, ROOK))
-                        | (attacks_bb(BISHOP, ksq) & pieces(QUEEN, BISHOP)))
+    Bitboard occupied = pieces();
+    
+    Bitboard snipers = ((xattacks_bb(BISHOP, ksq, occupied) & pieces(QUEEN, BISHOP))
+                        | (xattacks_bb(ROOK, ksq, occupied) & pieces(QUEEN, ROOK)))
                      & pieces(~c);
-    Bitboard occupancy = pieces() ^ snipers;
 
     while (snipers)
     {
         Square   sniperSq = pop_lsb(snipers);
-        Bitboard b        = between_bb(ksq, sniperSq) & occupancy;
+        Bitboard b        = (between_bb(ksq, sniperSq) ^ sniperSq) & occupied;
 
-        if (b && !more_than_one(b))
-        {
-            st->blockersForKing[c] |= b;
-            if (b & pieces(c))
-                st->pinners[~c] |= sniperSq;
-        }
+        st->blockersForKing[c] |= b;
+
+        if (b & pieces(c))
+            st->pinners[~c] |= sniperSq;
     }
 }
 

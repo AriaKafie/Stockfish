@@ -320,6 +320,10 @@ sf_always_inline Bitboard attacks_bb(PieceType pt, Square s, Bitboard occupied) 
 #endif
 }
 
+sf_always_inline Bitboard xattacks_bb(PieceType pt, Square s, Bitboard occupied) {
+    return attacks_bb(pt, s, occupied ^ (attacks_bb(pt, s, occupied) & occupied));
+}
+
 inline std::pair<Bitboard, Bitboard> both_attacks_bb(Square s, Bitboard occupied) {
 #ifdef USE_DUAL_HYPERBOLA_QUINT
     return dual_magic(s).both_attacks_bb(occupied);
