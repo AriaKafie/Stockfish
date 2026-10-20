@@ -316,9 +316,25 @@ inline Bitboard Position::threats_by(PieceType pt) const {
 
 inline Bitboard Position::checkers() const { return st->checkersBB; }
 
-inline Bitboard Position::blockers_for_king(Color c) const { return st->blockersForKing[c]; }
+inline Bitboard Position::blockers_for_king(Color c) const {
+    
+    if (st->blockersForKing[0] == -1ULL) {
+        update_slider_blockers(WHITE);
+        update_slider_blockers(BLACK);
+    }
+    
+    return st->blockersForKing[c];
+}
 
-inline Bitboard Position::pinners(Color c) const { return st->pinners[c]; }
+inline Bitboard Position::pinners(Color c) const {
+
+    if (st->blockersForKing[0] == -1ULL) {
+        update_slider_blockers(WHITE);
+        update_slider_blockers(BLACK);
+    }
+    
+    return st->pinners[c];
+}
 
 inline Bitboard Position::check_squares(PieceType pt) const { return st->checkSquares[pt]; }
 
