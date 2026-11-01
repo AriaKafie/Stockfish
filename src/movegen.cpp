@@ -201,8 +201,11 @@ Move* generate_moves(const Position& pos, Move* moveList, Bitboard target, Color
     const Square   ksq    = pos.square<KING>(us);
     const Bitboard pinned = pos.blockers_for_king(us);
 
-    Bitboard bb = pos.pieces(us, Pt) & ~pinned;
-    while (bb)
+    Bitboard pieces = Pt == KNIGHT
+        ? pos.pieces(us, Pt)
+        : pos.pieces(us, Pt) | pos.pieces(us, QUEEN);
+    
+    for (Bitboard bb = pieces & ~pinned; bb;)
     {
         Square   from = pop_lsb(bb);
         Bitboard b    = Attacks::attacks_bb(Pt, from, pos.pieces()) & target;
@@ -212,8 +215,7 @@ Move* generate_moves(const Position& pos, Move* moveList, Bitboard target, Color
 
     if constexpr (Pt != KNIGHT)  // pinned knights cannot move
     {
-        bb = pos.pieces(us, Pt) & pinned;
-        while (bb)
+        for (Bitboard bb = pieces & pinned; bb;)
         {
             Square   from = pop_lsb(bb);
             Bitboard b    = Attacks::attacks_bb(Pt, from, pos.pieces()) & target;
@@ -247,7 +249,6 @@ Move* generate_all(const Position& pos, Move* moveList, Color us) {
         moveList = generate_moves<KNIGHT>(pos, moveList, target, us);
         moveList = generate_moves<BISHOP>(pos, moveList, target, us);
         moveList = generate_moves<ROOK>(pos, moveList, target, us);
-        moveList = generate_moves<QUEEN>(pos, moveList, target, us);
     }
 
     if constexpr (Type == EVASIONS)
