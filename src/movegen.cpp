@@ -171,15 +171,13 @@ Move* generate_pawn_moves(const Position& pos, Move* moveList, Bitboard target) 
 
         const Square epSq = pos.ep_square();
 
-        if (epSq != SQ_NONE
-            // An en passant capture cannot resolve a discovered check
-            && !(Type == EVASIONS && (target & (epSq + Up))))
+        if (epSq != SQ_NONE)
         {
             assert(rank_of(epSq) == relative_rank(Us, RANK_6));
 
-            b1 = pawnsNotOn7
-               & ((canCaptureRight & shift(square_bb(epSq), -UpRight))
-                  | (canCaptureLeft & shift(square_bb(epSq), -UpLeft)));
+            b1 = Attacks::attacks_bb(PAWN, epSq, Them) & pawnsNotOn7 & (
+                ~pinned | Attacks::line_bb(ksq, epSq)
+            );
             assert(b1);
 
             while (b1)
